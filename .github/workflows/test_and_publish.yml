@@ -1,0 +1,36 @@
+name: Test and publish RemoteDict package on tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  test-and-publish:
+    runs-on: self-hosted
+    container:
+      image: python:3.11
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install .
+          pip install build twine
+
+      - name: Run tests
+        run: python -m unittest discover tests
+
+      - name: Build package
+        run: python -m build
+
+      - name: Publish to PyPI
+        if: success()
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          twine upload dist/*
